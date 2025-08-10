@@ -15,7 +15,10 @@ dependencies = [
   "yt-dlp>=2024.8.6",
   "click>=8.1.7",
   "python-dotenv>=1.0.1",
-  "colorama>=0.4.6"
+  "colorama>=0.4.6",
+  "google-api-python-client>=2.130.0",
+  "google-auth>=2.29.0",
+  "google-auth-oauthlib>=1.2.0"
 ]
 
 [project.urls]

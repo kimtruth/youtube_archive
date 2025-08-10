@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 import sys
 
 import click
@@ -7,6 +8,7 @@ from dotenv import load_dotenv
 
 from . import watcher
 from .streamer import restream_youtube
+from .youtube_api import create_stream_and_broadcast, login as yt_login, logout as yt_logout
 
 
 def _load_env() -> None:
@@ -16,6 +18,21 @@ def _load_env() -> None:
 @click.group()
 def cli() -> None:
     _load_env()
+
+
+@cli.command(help="YouTube OAuth 로그인(토큰 저장)")
+@click.option("--client-secrets", default="client_secret.json", show_default=True)
+@click.option("--token", default="token.json", show_default=True)
+def login(client_secrets: str, token: str) -> None:
+    yt_login(client_secrets_path=client_secrets, token_path=token)
+    click.echo("로그인 완료")
+
+
+@cli.command(help="YouTube OAuth 로그아웃(토큰 삭제)")
+@click.option("--token", default="token.json", show_default=True)
+def logout(token: str) -> None:
+    yt_logout(token_path=token)
+    click.echo("로그아웃 완료")
 
 
 @cli.command(help="다른 유튜브 라이브를 내 채널로 재송출합니다.")
@@ -125,6 +142,57 @@ def watch(
         sys.exit(2)
 
     try:
+        watcher.watch_channel_and_restream(
+            channel_url=channel_url,
+            stream_key=stream_key,
+            ingest_url=ingest_url,
+            yt_dlp_format=fmt,
+            copy_mode=copy_mode,
+            video_bitrate=video_bitrate,
+            audio_bitrate=audio_bitrate,
+            x264_preset=preset,
+            live_from_start=live_from_start,
+            verbose=verbose,
+            poll_interval_seconds=poll_interval,
+            max_checks=max_checks,
+        )
+    except KeyboardInterrupt:
+        click.echo("중단됨")
+    except Exception as exc:  # noqa: BLE001
+        if verbose:
+            raise
+        click.echo(f"오류: {exc}", err=True)
+        sys.exit(1)
+
+
+@cli.command(help="OAuth로 내 채널 비공개 방송을 생성하여 자동 재송출합니다.")
+@click.argument("channel_url", type=str)
+@click.option("--privacy", default="private", show_default=True)
+@click.option("--format", "fmt", default="bestvideo+bestaudio/best", show_default=True)
+@click.option("--copy/--reencode", "copy_mode", default=False, show_default=True)
+@click.option("--video-bitrate", default="3000k", show_default=True)
+@click.option("--audio-bitrate", default="160k", show_default=True)
+@click.option("--preset", default="veryfast", show_default=True)
+@click.option("--live-from-start/--live-edge", default=False, show_default=True)
+@click.option("--verbose/--quiet", default=False, show_default=True)
+@click.option("--interval", "poll_interval", default=15.0, show_default=True, help="폴링 간격(초)")
+@click.option("--max-checks", default=None, type=int, help="테스트/디버깅용 최대 폴링 횟수")
+def watch_oauth(
+    channel_url: str,
+    privacy: str,
+    fmt: str,
+    copy_mode: bool,
+    video_bitrate: str,
+    audio_bitrate: str,
+    preset: str,
+    live_from_start: bool,
+    verbose: bool,
+    poll_interval: float,
+    max_checks: int | None,
+) -> None:
+    try:
+        title = dt.datetime.now().strftime("Archive %Y-%m-%d %H:%M:%S")
+        ingest_url, stream_key = create_stream_and_broadcast(title=title, privacy_status=privacy)
         watcher.watch_channel_and_restream(
             channel_url=channel_url,
             stream_key=stream_key,
