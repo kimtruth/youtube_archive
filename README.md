@@ -1,0 +1,82 @@
+# youtube-dump
+
+다른 유튜브 라이브를 입력하면, 등록된 유튜브 스트리밍 키로 내 채널에 자동 재송출(아카이빙)하는 도구입니다.
+
+## 요구사항
+- Python 3.10+
+- ffmpeg (로컬 실행 시 필수)
+- uv (패키지/가상환경 관리)
+
+## 설치 (uv)
+```bash
+# uv 설치 (macOS)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 프로젝트 디렉터리로 이동
+cd /Users/truth/Desktop/youtube_dump
+
+# 가상환경 생성 및 종속성 설치
+uv venv
+uv sync
+```
+
+ffmpeg 설치 (macOS):
+```bash
+brew install ffmpeg
+```
+
+## 환경 변수
+`.env` 파일 또는 환경 변수로 유튜브 스트림 키를 설정합니다.
+
+```env
+YOUTUBE_STREAM_KEY=abcd-efgh-ijkl-mnop
+```
+
+## 사용법
+```bash
+# 기본 사용: 현재 라이브 중인 유튜브 URL을 입력
+uv run youtube-dump restream "https://www.youtube.com/watch?v=LIVE_VIDEO_ID"
+
+# 키 직접 지정
+uv run youtube-dump restream "<URL>" --stream-key "abcd-efgh-ijkl-mnop"
+
+# 인코딩 대신 가능한 경우 복사 시도(성공하면 CPU 사용량 낮음)
+uv run youtube-dump restream "<URL>" --copy
+
+# 비트레이트/프리셋 조정
+uv run youtube-dump restream "<URL>" \
+  --video-bitrate 3500k --audio-bitrate 160k --preset veryfast
+```
+
+기본 출력 목적지는 `rtmp://a.rtmp.youtube.com/live2/<STREAM_KEY>` 입니다. 변경하려면 `--ingest-url` 지정:
+
+```bash
+uv run youtube-dump restream "<URL>" --ingest-url rtmp://a.rtmp.youtube.com/live2
+```
+
+## Docker
+```bash
+# 빌드
+docker build -t youtube-dump:local .
+
+# 실행 (스트림 키 전달)
+docker run --rm \
+  -e YOUTUBE_STREAM_KEY=abcd-efgh-ijkl-mnop \
+  youtube-dump:local \
+  youtube-dump restream "https://www.youtube.com/watch?v=LIVE_VIDEO_ID"
+```
+
+compose 예시:
+```yaml
+version: "3"
+services:
+  app:
+    build: .
+    environment:
+      - YOUTUBE_STREAM_KEY=${YOUTUBE_STREAM_KEY}
+    command: ["youtube-dump", "restream", "https://www.youtube.com/watch?v=LIVE_VIDEO_ID"]
+```
+
+## 주의
+- 원본 라이브 스트림 코덱이 H264/AAC가 아닐 수 있어 기본은 재인코딩합니다. CPU 성능이 낮다면 `--copy`를 시도해보세요(실패 시 자동 재시도 없음).
+- 본 도구는 개인 아카이빙 목적입니다. 저작권 및 서비스 약관을 준수하세요.

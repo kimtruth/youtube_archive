@@ -1,0 +1,4 @@
+yt-dlp>=2024.8.6
+click>=8.1.7
+python-dotenv>=1.0.1
+colorama>=0.4.6

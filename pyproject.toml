@@ -1,0 +1,47 @@
+[project]
+name = "youtube-dump"
+version = "0.1.0"
+description = "Restream YouTube Live to your own YouTube channel for archiving."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Your Name" }
+]
+license = { text = "MIT" }
+keywords = ["youtube", "live", "restream", "archive", "ffmpeg", "yt-dlp"]
+
+# uv will manage these dependencies
+dependencies = [
+  "yt-dlp>=2024.8.6",
+  "click>=8.1.7",
+  "python-dotenv>=1.0.1",
+  "colorama>=0.4.6"
+]
+
+[project.urls]
+homepage = "https://example.com"
+
+[project.scripts]
+youtube-dump = "youtube_dump.cli:main"
+
+[tool.uv]
+package = true
+# Optional dev tools
+dev-dependencies = [
+  "ruff>=0.5.5",
+  "pytest>=8.3.1",
+  "pytest-cov>=5.0.0",
+  "pytype>=2024.10.11"
+]
+
+[tool.ruff]
+line-length = 100
+lint.select = ["E", "F", "W", "I", "UP", "B", "PL", "PERF"]
+lint.ignore = [
+  "E501",
+  "PLR0913",
+]
+format.preview = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["PLR2004"]

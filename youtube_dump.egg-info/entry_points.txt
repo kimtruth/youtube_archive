@@ -1,0 +1,2 @@
+[console_scripts]
+youtube-dump = youtube_dump.cli:main
